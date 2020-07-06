@@ -1,8 +1,10 @@
 import 'source-map-support/register'
 
-import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import * as uuid from 'uuid'
 import {parseUserId} from "../../auth/utils"
+import * as middy from 'middy'
+import { cors } from 'middy/middlewares'
 
 import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 import * as AWS from 'aws-sdk'
@@ -10,7 +12,8 @@ import * as AWS from 'aws-sdk'
 const docClient = new AWS.DynamoDB.DocumentClient()
 const toDosTable = process.env.TODOS_TABLE
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   const newToDo: CreateTodoRequest = JSON.parse(event.body)
 
   // Retrieve User ID
@@ -35,12 +38,11 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
 
   return {
     statusCode: 201,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': true
-    },
     body: JSON.stringify({
       newItem
     })
   }
-}
+})
+
+handler
+  .use(cors({credentials: true}))

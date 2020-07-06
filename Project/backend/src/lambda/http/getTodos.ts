@@ -1,15 +1,18 @@
 import 'source-map-support/register'
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult, APIGatewayProxyHandler } from 'aws-lambda'
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
 import * as AWS  from 'aws-sdk'
 import {parseUserId} from "../../auth/utils"
+import * as middy from 'middy'
+import { cors } from 'middy/middlewares'
 
 const docClient = new AWS.DynamoDB.DocumentClient()
 
 const todosTable = process.env.TODOS_TABLE
 const todoUserIdIndex = process.env.USER_ID_INDEX
 
-export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+export const handler = middy(
+  async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   // TODO: Get all TODO items for a current user
   console.log(JSON.stringify(event))
 
@@ -31,23 +34,20 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     }
   }).promise()
 
-  // Return results (if there are any). Otherwise return a 404 (resource not found)
-  if (result.Count !== 0) {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify(result.Items)
-    }
-  }
-
+  // Return results (if there are any).
   return {
-    statusCode: 404,
-    headers: {
-      'Access-Control-Allow-Origin': '*'
-    },
-    body: ''
+    statusCode: 200,
+    body: JSON.stringify({items: result.Items})
   }
 
-}
+  // UI complains if I return a 404. So I return a 0-element array if there are no records.
+  // return {
+  //   statusCode: 404,
+  //   body: ''
+  // }
+
+})
+
+handler
+  .use(cors({credentials: true}))
+
