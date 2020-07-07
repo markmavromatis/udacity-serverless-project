@@ -1,41 +1,39 @@
 import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
-import * as AWS  from 'aws-sdk'
-import {parseUserId} from "../../auth/utils"
+// import * as AWS  from 'aws-sdk'
+import {getUserIdFromAuthorizationHeader} from "../../auth/utils"
 import * as middy from 'middy'
 import { cors } from 'middy/middlewares'
 
-const docClient = new AWS.DynamoDB.DocumentClient()
+// const docClient = new AWS.DynamoDB.DocumentClient()
 
-const todosTable = process.env.TODOS_TABLE
-const todoUserIdIndex = process.env.USER_ID_INDEX
+// const todosTable = process.env.TODOS_TABLE
+// const todoUserIdIndex = process.env.USER_ID_INDEX
+import { getToDos } from "../../businessLogic/todos"
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
 
   console.log(JSON.stringify(event))
 
-  // Retrieve User ID
-  const authorization = event.headers.Authorization
-  const split = authorization.split(' ');
-  const jwtToken = split[1];
-  const userId = parseUserId(jwtToken);
+  // Retrieve User ID from Authorization header
+  const userId = getUserIdFromAuthorizationHeader(event);
 
   console.log("User ID: " + userId)
   
   // Query DynamoDB for Todos belonging to this user
-  const result = await docClient.query({
-    TableName : todosTable,
-    IndexName : todoUserIdIndex,
-    KeyConditionExpression: 'userId = :userId',
-    ExpressionAttributeValues: {
-        ':userId': userId
-    }
-  }).promise()
+  // const result = await docClient.query({
+  //   TableName : todosTable,
+  //   IndexName : todoUserIdIndex,
+  //   KeyConditionExpression: 'userId = :userId',
+  //   ExpressionAttributeValues: {
+  //       ':userId': userId
+  //   }
+  // }).promise()
 
-  console.log("Result items = " + JSON.stringify(result.Items))
-  const returnResult = result.Items ? result.Items : [];
+  // console.log("Result items = " + JSON.stringify(result.Items))
+  const returnResult = await getToDos(userId);
 
   // Return results (if there are any).
   return {
