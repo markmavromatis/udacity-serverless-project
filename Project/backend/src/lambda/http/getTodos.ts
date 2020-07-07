@@ -13,7 +13,7 @@ const todoUserIdIndex = process.env.USER_ID_INDEX
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  // TODO: Get all TODO items for a current user
+
   console.log(JSON.stringify(event))
 
   // Retrieve User ID
@@ -24,7 +24,7 @@ export const handler = middy(
 
   console.log("User ID: " + userId)
   
-  // Query DynamoDB for ToDos belonging to this user
+  // Query DynamoDB for Todos belonging to this user
   const result = await docClient.query({
     TableName : todosTable,
     IndexName : todoUserIdIndex,
@@ -34,10 +34,13 @@ export const handler = middy(
     }
   }).promise()
 
+  console.log("Result items = " + JSON.stringify(result.Items))
+  const returnResult = result.Items ? result.Items : [];
+
   // Return results (if there are any).
   return {
     statusCode: 200,
-    body: JSON.stringify({items: result.Items})
+    body: JSON.stringify({items: returnResult})
   }
 
   // UI complains if I return a 404. So I return a 0-element array if there are no records.

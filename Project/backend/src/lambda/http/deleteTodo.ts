@@ -10,14 +10,14 @@ const docClient = new AWS.DynamoDB.DocumentClient()
 const todosTable = process.env.TODOS_TABLE
 
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const toDoId = event.pathParameters.todoId
-  console.log("Deleting record: " + toDoId)
+  const todoId = event.pathParameters.todoId
+  console.log("Deleting record: " + todoId)
 
   // TODO: Remove a TODO item by id
   await docClient.delete({
     TableName: todosTable,
     Key:{
-      "toDoId": toDoId
+      "todoId": todoId
     }
   }).promise()
   

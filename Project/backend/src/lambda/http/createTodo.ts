@@ -10,11 +10,11 @@ import { CreateTodoRequest } from '../../requests/CreateTodoRequest'
 import * as AWS from 'aws-sdk'
 
 const docClient = new AWS.DynamoDB.DocumentClient()
-const toDosTable = process.env.TODOS_TABLE
+const todosTable = process.env.TODOS_TABLE
 
 export const handler = middy(
   async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const newToDo: CreateTodoRequest = JSON.parse(event.body)
+  const newTodo: CreateTodoRequest = JSON.parse(event.body)
 
   // Retrieve User ID
   const authorization = event.headers.Authorization
@@ -22,24 +22,24 @@ export const handler = middy(
   const jwtToken = split[1];
   const userId = parseUserId(jwtToken);
   
-  const toDoId = uuid.v4()
+  const todoId = uuid.v4()
 
   const newItem = {
-    toDoId: toDoId,
+    todoId: todoId,
     userId: userId,
     createdAt: new Date().toISOString(),
-    ...newToDo
+    ...newTodo
   }
 
   await docClient.put({
-    TableName: toDosTable,
+    TableName: todosTable,
     Item: newItem
   }).promise()
 
   return {
     statusCode: 201,
     body: JSON.stringify({
-      newItem
+      item: newItem
     })
   }
 })

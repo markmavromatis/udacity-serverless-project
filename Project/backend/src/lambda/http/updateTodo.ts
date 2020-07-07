@@ -12,23 +12,23 @@ const docClient = new AWS.DynamoDB.DocumentClient()
 const todosTable = process.env.TODOS_TABLE
 
 export const handler = middy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
-  const toDoId = event.pathParameters.todoId
-  const updatedToDo: UpdateTodoRequest = JSON.parse(event.body)
-  console.log("Updating record: " + toDoId)
-  console.log("with fields: " + JSON.stringify(updatedToDo))
+  const todoId = event.pathParameters.todoId
+  const updatedTodo: UpdateTodoRequest = JSON.parse(event.body)
+  console.log("Updating record: " + todoId)
+  console.log("with fields: " + JSON.stringify(updatedTodo))
 
 
   // TODO: Update a TODO item with the provided id using values in the "updatedTodo" object
   await docClient.update({
     TableName: todosTable,
     Key:{
-      "toDoId": toDoId
+      "todoId": todoId
     },
     UpdateExpression: "set done=:done, dueDate=:dueDate, #n=:name",
     ExpressionAttributeValues:{
-        ":done": updatedToDo.done,
-        ":dueDate": updatedToDo.dueDate,
-        ":name": updatedToDo.name
+        ":done": updatedTodo.done,
+        ":dueDate": updatedTodo.dueDate,
+        ":name": updatedTodo.name
     },
     ExpressionAttributeNames: {"#n":"name"},
     ReturnValues:"UPDATED_NEW"
