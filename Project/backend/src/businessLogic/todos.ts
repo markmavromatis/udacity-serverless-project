@@ -2,15 +2,12 @@ import * as uuid from 'uuid'
 
 import { TodoItem } from '../models/TodoItem'
 import { TodoAccess } from '../dataLayer/todoAccess'
+import { FileLayerTodoAccess } from '../fileStorageLayer/fileStorageTodoAccess'
 import { CreateTodoRequest } from '../requests/CreateTodoRequest'
-// import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
-// import { getUserIdFromAuthorizationHeader } from '../auth/utils'
+import { UpdateTodoRequest } from '../requests/UpdateTodoRequest'
 
 const todoAccess = new TodoAccess()
-
-// export async function getAllGroups(): Promise<TodoItem[]> {
-//   return todoAccess.getTodos()
-// }
+const fileLayerAccess = new FileLayerTodoAccess()
 
 // Business logic for creating a Todo item
 export async function createTodo(
@@ -30,6 +27,19 @@ export async function createTodo(
 }
 
 export async function getToDos(userId: string): Promise<TodoItem[]> {
-
   return await todoAccess.getToDos(userId)
+}
+
+export async function deleteToDo(todoId: string) {
+  await todoAccess.deleteToDo(todoId)
+}
+
+// Business logic for updating a Todo item
+export async function updateTodo(todoId: string, todoRequest: UpdateTodoRequest) {
+  await todoAccess.updateToDo(todoId, todoRequest.name, todoRequest.dueDate, todoRequest.done)
+}
+
+export async function generateUploadUrl(todoId: string) {
+  // Update S3
+  return await fileLayerAccess.getSignedUrl(todoId)
 }
