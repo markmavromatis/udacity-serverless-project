@@ -18,19 +18,22 @@ provider:
     GENERATED_URL_EXPIRATION: 300
     TODO_IMAGES_S3_BUCKET: serverless-todo-images-abc-${self:provider.stage}
 
-documentation:
-  api:
-    info:
-      version: v1.0.0
-      title: Reminders App API
-      description: Serverless application for creating and updated reminders (todos)
-  models:
-    - name: CreateTodoRequest
-      contentType: application/json
-      schema: ${file(models/create-todo-request.json)}
-    - name: UpdateTodoRequest
-      contentType: application/json
-      schema: ${file(models/update-todo-request.json)}
+custom:
+  topicName: todoImagesTopic-${self:provider.stage}
+
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: Reminders App API
+        description: Serverless application for creating and updated reminders (todos)
+    models:
+      - name: CreateTodoRequest
+        contentType: application/json
+        schema: ${file(models/create-todo-request.json)}
+      - name: UpdateTodoRequest
+        contentType: application/json
+        schema: ${file(models/update-todo-request.json)}
   
 functions:
 
@@ -126,6 +129,19 @@ functions:
           path: todos/{todoId}/attachment
           cors: true
           authorizer: Auth
+
+  UpdateImageUrl:
+    handler: src/lambda/s3/updateImageUrl.handler
+    events:
+      - sns:
+          arn:
+            Fn::Join:
+              - ':'
+              - - arn:aws:sns
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+                - ${self:custom.topicName}
+          topicName: ${self:custom.topicName}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -135,6 +151,15 @@ functions:
 resources:
   Resources:
     # TODO: Add any necessary AWS resources
+    RequestBodyValidator:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'request-body-validator'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true
+        ValidateRequestParameters: false
+    
     TodosDynamoDBTable:
       Type: "AWS::DynamoDB::Table"
       Properties:
@@ -164,6 +189,10 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:provider.environment.TODO_IMAGES_S3_BUCKET}
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:Put
+              Topic: !Ref TodoImagesTopic
         CorsConfiguration:
           CorsRules:
             -
@@ -192,4 +221,28 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.TODO_IMAGES_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket
-          
+
+    SNSTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action: sns:Publish
+              Resource:
+                !Ref TodoImagesTopic
+              Condition:
+                ArnLike:
+                  AWS:SourceArn: arn:aws:s3:::${self:provider.environment.TODO_IMAGES_S3_BUCKET}
+        Topics:
+          - !Ref TodoImagesTopic
+
+    TodoImagesTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: Todo Images bucket topic
+        TopicName: ${self:custom.topicName}
+

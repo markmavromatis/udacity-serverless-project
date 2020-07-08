@@ -59,6 +59,7 @@ export class TodoAccess {
     }).promise()
   }
 
+  // Update the url field in the DynamoDB Todos table
   async updateUrl(todoId : String) {
 
     const attachmentUrl: string = 'https://' + bucketName + '.s3.amazonaws.com/' + todoId

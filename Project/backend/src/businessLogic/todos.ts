@@ -39,7 +39,13 @@ export async function updateTodo(todoId: string, todoRequest: UpdateTodoRequest)
   await todoAccess.updateToDo(todoId, todoRequest.name, todoRequest.dueDate, todoRequest.done)
 }
 
+// Ask File storage service for a temporary URL
 export async function generateUploadUrl(todoId: string) {
-  // Update S3
   return await fileLayerAccess.getSignedUrl(todoId)
+}
+
+// Update URL field in the Todos table
+export async function updateTodoUrl(todoId: string) {
+  await todoAccess.updateUrl(todoId)
+
 }
